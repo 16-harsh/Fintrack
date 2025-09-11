@@ -8,6 +8,8 @@ const nav = [
   { to: "/income", label: "Income" },
   { to: "/expenses", label: "Expenses" },
   { to: "/goals-reminders", label: "Goals & Reminders" },
+  { to: "/itr", label: "ITR" },
+  { to: "/gst", label: "GST" },
 ];
 
 export function AppHeader() {
