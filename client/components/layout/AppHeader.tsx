@@ -7,6 +7,7 @@ const nav = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/income", label: "Income" },
   { to: "/expenses", label: "Expenses" },
+  { to: "/goals-reminders", label: "Goals & Reminders" },
 ];
 
 export function AppHeader() {
