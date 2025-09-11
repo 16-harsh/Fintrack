@@ -1,10 +1,9 @@
 import { DemoResponse } from "@shared/api";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { FormEvent, useMemo, useState } from "react";
 import { isFirebaseConfigured, getFirebaseAuth } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
