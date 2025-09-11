@@ -1,6 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { Button } from "@/components/ui/button";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -14,7 +13,6 @@ import {
   YAxis,
   Cell,
 } from "recharts";
-import * as XLSX from "xlsx";
 
 const demoIncome = [
   { month: "Jan", income: 1800 },
@@ -52,24 +50,7 @@ export default function Dashboard() {
     return { ti, te, saving: ti - te };
   }, [merged]);
 
-  const [exportMode, setExportMode] = useState<"ITR" | "GST">("ITR");
 
-  function exportExcel() {
-    const incomeSheet = XLSX.utils.json_to_sheet(
-      demoIncome.map((d) => ({ Month: d.month, Source: "Job/Freelance", Amount: d.income })),
-    );
-    const expenseSheet = XLSX.utils.json_to_sheet(
-      categories.map((c) => ({ Category: c.name, Amount: c.value })),
-    );
-    const monthlySheet = XLSX.utils.json_to_sheet(
-      merged.map((r) => ({ Month: r.month, Income: r.income, Expenses: r.expenses, Net: r.income - r.expenses })),
-    );
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, incomeSheet, "Income");
-    XLSX.utils.book_append_sheet(wb, expenseSheet, "Expenses");
-    XLSX.utils.book_append_sheet(wb, monthlySheet, exportMode === "GST" ? "GST Summary" : "ITR Summary");
-    XLSX.writeFile(wb, `fintrack-${exportMode.toLowerCase()}-report.xlsx`);
-  }
 
   return (
     <Layout>
@@ -79,17 +60,6 @@ export default function Dashboard() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
               <p className="text-foreground/70">Overview of your finances with charts and KPIs.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <select
-                value={exportMode}
-                onChange={(e) => setExportMode(e.target.value as any)}
-                className="h-10 rounded-md border bg-background px-3 text-sm"
-              >
-                <option value="ITR">ITR</option>
-                <option value="GST">GST</option>
-              </select>
-              <Button onClick={exportExcel}>Export Excel</Button>
             </div>
           </div>
 
