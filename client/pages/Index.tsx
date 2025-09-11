@@ -1,62 +1,134 @@
 import { DemoResponse } from "@shared/api";
 import { useEffect, useState } from "react";
 
-export default function Index() {
-  const [exampleFromServer, setExampleFromServer] = useState("");
-  // Fetch users on component mount
-  useEffect(() => {
-    fetchDemo();
-  }, []);
+import { Layout } from "@/components/layout/Layout";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { FormEvent, useMemo, useState } from "react";
+import { isFirebaseConfigured, getFirebaseAuth } from "@/lib/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
-  // Example of how to fetch data from the server (if needed)
-  const fetchDemo = async () => {
-    try {
-      const response = await fetch("/api/demo");
-      const data = (await response.json()) as DemoResponse;
-      setExampleFromServer(data.message);
-    } catch (error) {
-      console.error("Error fetching hello:", error);
+export default function Index() {
+  const navigate = useNavigate();
+  const configured = useMemo(() => isFirebaseConfigured, []);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function onLogin(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!configured) {
+      navigate("/dashboard");
+      return;
     }
-  };
+    try {
+      setLoading(true);
+      const auth = getFirebaseAuth();
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate("/dashboard");
+    } catch (err: any) {
+      setError(err?.message ?? "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-      <div className="text-center">
-        {/* TODO: FUSION_GENERATION_APP_PLACEHOLDER replace everything here with the actual app! */}
-        <h1 className="text-2xl font-semibold text-slate-800 flex items-center justify-center gap-3">
-          <svg
-            className="animate-spin h-8 w-8 text-slate-400"
-            viewBox="0 0 50 50"
-          >
-            <circle
-              className="opacity-30"
-              cx="25"
-              cy="25"
-              r="20"
-              stroke="currentColor"
-              strokeWidth="5"
-              fill="none"
-            />
-            <circle
-              className="text-slate-600"
-              cx="25"
-              cy="25"
-              r="20"
-              stroke="currentColor"
-              strokeWidth="5"
-              fill="none"
-              strokeDasharray="100"
-              strokeDashoffset="75"
-            />
-          </svg>
-          Generating your app...
-        </h1>
-        <p className="mt-4 text-slate-600 max-w-md">
-          Watch the chat on the left for updates that might need your attention
-          to finish generating
-        </p>
-        <p className="mt-4 hidden max-w-md">{exampleFromServer}</p>
-      </div>
-    </div>
+    <Layout>
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/10 via-accent/10 to-transparent" />
+        <div className="container grid gap-10 py-16 lg:grid-cols-2 lg:items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium text-foreground/70">
+              <span className="h-2 w-2 rounded-full bg-primary" />
+              Personal Finance Platform
+            </div>
+            <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">
+              Track income, expenses, taxes and savings in one place
+            </h1>
+            <p className="mt-4 text-foreground/70 text-lg max-w-prose">
+              FinTrack lets you upload invoices and receipts, categorize spending,
+              visualize insights with pie and bar charts, set bill reminders, and export
+              ITR/GST-ready Excel reports.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Button onClick={() => navigate("/dashboard")}>
+                Explore Dashboard (Demo)
+              </Button>
+              <a href="#login" className="text-sm font-medium text-foreground/70 hover:text-foreground">
+                Secure Login below
+              </a>
+            </div>
+            <ul className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <li className="rounded-lg border bg-card p-4">
+                <p className="font-semibold">Visual Analytics</p>
+                <p className="text-sm text-foreground/70">Pie by category · Bar: income vs. expenses</p>
+              </li>
+              <li className="rounded-lg border bg-card p-4">
+                <p className="font-semibold">Documents</p>
+                <p className="text-sm text-foreground/70">Attach invoices and receipts to entries</p>
+              </li>
+              <li className="rounded-lg border bg-card p-4">
+                <p className="font-semibold">Reminders & Savings</p>
+                <p className="text-sm text-foreground/70">Plan savings and set bill due reminders</p>
+              </li>
+              <li className="rounded-lg border bg-card p-4">
+                <p className="font-semibold">ITR/GST Exports</p>
+                <p className="text-sm text-foreground/70">One-click Excel tailored for ITR or GST</p>
+              </li>
+            </ul>
+          </div>
+          <div id="login" className="lg:justify-self-end">
+            <div className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
+              <h2 className="text-xl font-semibold">Login</h2>
+              {!configured && (
+                <p className="mt-2 text-sm text-foreground/70">
+                  Firebase is not connected yet. Use Demo to preview the app, or set
+                  VITE_FIREBASE_* variables in project settings to enable authentication.
+                </p>
+              )}
+              <form onSubmit={onLogin} className="mt-6 grid gap-3">
+                <div className="grid gap-1">
+                  <label htmlFor="email" className="text-sm font-medium">Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    required={configured}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+                    placeholder={configured ? "you@example.com" : "demo@example.com"}
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <label htmlFor="password" className="text-sm font-medium">Password</label>
+                  <input
+                    id="password"
+                    type="password"
+                    required={configured}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+                    placeholder={configured ? "••••••••" : "demo"}
+                  />
+                </div>
+                {error && <p className="text-sm text-destructive">{error}</p>}
+                <div className="mt-2 flex items-center gap-2">
+                  <Button type="submit" disabled={loading} className="flex-1">
+                    {configured ? (loading ? "Signing in..." : "Sign In") : "Enter Demo"}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => navigate("/dashboard")}>Skip</Button>
+                </div>
+                <p className="text-xs text-foreground/60 mt-2">
+                  By continuing you agree to our Terms and acknowledge our Privacy Policy.
+                </p>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+    </Layout>
   );
 }
