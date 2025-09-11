@@ -13,6 +13,9 @@ import Expenses from "./pages/Expenses";
 import GoalsReminders from "./pages/GoalsReminders";
 import ITR from "./pages/ITR";
 import GST from "./pages/GST";
+import Login from "./pages/Login";
+import { AuthProvider } from "@/context/AuthContext";
+import { ProtectedRoute } from "@/components/routing/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
