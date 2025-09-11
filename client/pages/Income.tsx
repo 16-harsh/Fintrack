@@ -1,0 +1,168 @@
+import { Layout } from "@/components/layout/Layout";
+import { Button } from "@/components/ui/button";
+import { isFirebaseConfigured, getDb, getBucket, getFirebaseAuth } from "@/lib/firebase";
+import { addDoc, collection, getDocs, orderBy, query, serverTimestamp, updateDoc, where, doc } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { useEffect, useMemo, useState } from "react";
+
+interface IncomeEntry {
+  id?: string;
+  uid?: string;
+  source: string;
+  amount: number;
+  date: string; // ISO
+  notes?: string;
+  invoiceUrl?: string;
+  createdAt?: any;
+}
+
+const demo: IncomeEntry[] = [
+  { source: "Job", amount: 2500, date: new Date().toISOString().slice(0,10), notes: "Salary" },
+  { source: "Freelancing", amount: 800, date: new Date(Date.now()-86400000*7).toISOString().slice(0,10), notes: "Website revamp" },
+];
+
+export default function Income() {
+  const configured = useMemo(() => isFirebaseConfigured, []);
+  const auth = configured ? getFirebaseAuth() : null;
+  const [items, setItems] = useState<IncomeEntry[]>(configured ? [] : demo);
+  const [loading, setLoading] = useState(false);
+
+  const [form, setForm] = useState<IncomeEntry>({ source: "Job", amount: 0, date: new Date().toISOString().slice(0,10), notes: "" });
+  const [file, setFile] = useState<File | null>(null);
+  const total = useMemo(() => items.reduce((s,i)=> s + (Number(i.amount)||0), 0), [items]);
+
+  useEffect(() => {
+    if (!configured) return;
+    const user = auth!.currentUser;
+    if (!user) return; // handled by demo mode
+    (async () => {
+      const db = getDb();
+      const q = query(collection(db, "incomes"), where("uid","==", user.uid), orderBy("createdAt","desc"));
+      const snap = await getDocs(q);
+      const list: IncomeEntry[] = [];
+      snap.forEach((d) => list.push({ id: d.id, ...(d.data() as any) }));
+      setItems(list);
+    })();
+  }, [configured, auth]);
+
+  async function onAdd() {
+    if (!form.amount || !form.date) return;
+    if (!configured) {
+      setItems((prev) => [{ ...form }, ...prev]);
+      setForm({ source: form.source, amount: 0, date: new Date().toISOString().slice(0,10), notes: "" });
+      setFile(null);
+      return;
+    }
+    const user = auth!.currentUser;
+    if (!user) return;
+    setLoading(true);
+    try {
+      const db = getDb();
+      const docRef = await addDoc(collection(db, "incomes"), {
+        uid: user.uid,
+        source: form.source,
+        amount: Number(form.amount),
+        date: form.date,
+        notes: form.notes ?? "",
+        invoiceUrl: "",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      let invoiceUrl = "";
+      if (file) {
+        const storage = getBucket();
+        const path = `invoices/${user.uid}/${docRef.id}/${file.name}`;
+        const storageRef = ref(storage, path);
+        await uploadBytes(storageRef, file);
+        invoiceUrl = await getDownloadURL(storageRef);
+        await updateDoc(doc(db, "incomes", docRef.id), { invoiceUrl, updatedAt: serverTimestamp() });
+      }
+      setItems((prev) => [
+        { id: docRef.id, uid: user.uid, source: form.source, amount: Number(form.amount), date: form.date, notes: form.notes, invoiceUrl },
+        ...prev,
+      ]);
+      setForm({ source: form.source, amount: 0, date: new Date().toISOString().slice(0,10), notes: "" });
+      setFile(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Layout>
+      <div className="container py-10">
+        <div className="flex flex-col gap-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Income</h1>
+            <p className="text-foreground/70">Upload income sources and invoices.</p>
+            {!configured && (
+              <p className="mt-2 text-sm text-foreground/70">Demo mode active. Connect Firebase to persist data.</p>
+            )}
+          </div>
+
+          <div className="rounded-xl border bg-card p-4 sm:p-6">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="grid gap-1">
+                <label className="text-sm font-medium">Source</label>
+                <select className="h-10 rounded-md border bg-background px-3 text-sm" value={form.source} onChange={(e)=>setForm({...form, source: e.target.value})}>
+                  <option>Job</option>
+                  <option>Freelancing</option>
+                  <option>Trading</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div className="grid gap-1">
+                <label className="text-sm font-medium">Amount</label>
+                <input className="h-10 rounded-md border bg-background px-3 text-sm" type="number" min={0} value={form.amount} onChange={(e)=>setForm({...form, amount: Number(e.target.value)})} />
+              </div>
+              <div className="grid gap-1">
+                <label className="text-sm font-medium">Date</label>
+                <input className="h-10 rounded-md border bg-background px-3 text-sm" type="date" value={form.date} onChange={(e)=>setForm({...form, date: e.target.value})} />
+              </div>
+              <div className="grid gap-1 lg:col-span-2">
+                <label className="text-sm font-medium">Notes</label>
+                <input className="h-10 rounded-md border bg-background px-3 text-sm" placeholder="Optional" value={form.notes||""} onChange={(e)=>setForm({...form, notes: e.target.value})} />
+              </div>
+              <div className="grid gap-1 lg:col-span-2">
+                <label className="text-sm font-medium">Invoice</label>
+                <input className="h-10 rounded-md border bg-background px-3 text-sm file:mr-3 file:rounded file:border-0 file:bg-secondary file:px-3 file:py-2" type="file" onChange={(e)=>setFile(e.target.files?.[0]||null)} />
+              </div>
+              <div className="flex items-end">
+                <Button onClick={onAdd} disabled={loading}>{loading? "Saving...":"Add Income"}</Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Entries</h2>
+            <p className="text-sm text-foreground/70">Total: ₹{total.toLocaleString()}</p>
+          </div>
+          <div className="overflow-x-auto rounded-xl border">
+            <table className="min-w-full text-sm">
+              <thead className="bg-secondary/50 text-left">
+                <tr>
+                  <th className="p-3">Date</th>
+                  <th className="p-3">Source</th>
+                  <th className="p-3">Amount</th>
+                  <th className="p-3">Notes</th>
+                  <th className="p-3">Invoice</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((i, idx) => (
+                  <tr key={i.id || idx} className="border-t">
+                    <td className="p-3 whitespace-nowrap">{i.date}</td>
+                    <td className="p-3">{i.source}</td>
+                    <td className="p-3">₹{Number(i.amount).toLocaleString()}</td>
+                    <td className="p-3">{i.notes}</td>
+                    <td className="p-3">{i.invoiceUrl ? <a className="text-primary underline" href={i.invoiceUrl} target="_blank" rel="noreferrer">View</a> : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+}
