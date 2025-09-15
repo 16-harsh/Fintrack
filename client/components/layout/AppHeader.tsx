@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,7 @@ const nav = [
 
 export function AppHeader() {
   const { pathname } = useLocation();
+  const { user, configured, signOut } = useAuth();
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -35,9 +37,21 @@ export function AppHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Link to="/dashboard">
-            <Button size="sm" className="hidden sm:inline-flex">Open App</Button>
-          </Link>
+          {configured ? (
+            user ? (
+              <Button size="sm" variant="outline" onClick={() => void signOut()}>
+                Sign out
+              </Button>
+            ) : (
+              <Link to="/login">
+                <Button size="sm" className="hidden sm:inline-flex">Log in</Button>
+              </Link>
+            )
+          ) : (
+            <Link to="/dashboard">
+              <Button size="sm" className="hidden sm:inline-flex">Open App</Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>
