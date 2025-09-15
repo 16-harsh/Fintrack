@@ -84,7 +84,7 @@ export default function Index() {
               <h2 className="text-xl font-semibold">Login</h2>
               {!configured && (
                 <p className="mt-2 text-sm text-foreground/70">
-                  Firebase is not connected yet. Use Demo to preview the app, or set
+                  Firebase is not connected yet. Use Demo to preview the site, or set
                   VITE_FIREBASE_* variables in project settings to enable authentication.
                 </p>
               )}
