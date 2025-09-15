@@ -5,6 +5,7 @@ import { Layout } from "@/components/layout/Layout";
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading, configured } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
