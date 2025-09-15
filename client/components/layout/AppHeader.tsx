@@ -49,7 +49,7 @@ export function AppHeader() {
             )
           ) : (
             <Link to="/dashboard">
-              <Button size="sm" className="hidden sm:inline-flex">Open App</Button>
+              <Button size="sm" className="hidden sm:inline-flex">Open Site</Button>
             </Link>
           )}
         </div>
