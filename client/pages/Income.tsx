@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { isFirebaseConfigured, getDb, getBucket, getFirebaseAuth } from "@/lib/firebase";
-import { addDoc, collection, getDocs, orderBy, query, serverTimestamp, updateDoc, where, doc } from "firebase/firestore";
+import { addDoc, collection, getDocs, orderBy, query, serverTimestamp, updateDoc, where, doc, deleteDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useEffect, useMemo, useState } from "react";
 
@@ -29,6 +29,8 @@ export default function Income() {
 
   const [form, setForm] = useState<IncomeEntry>({ source: "Job", amount: 0, date: new Date().toISOString().slice(0,10), notes: "" });
   const [file, setFile] = useState<File | null>(null);
+  const [editingId, setEditingId] = useState<string | number | null>(null);
+  const [editForm, setEditForm] = useState<IncomeEntry | null>(null);
   const total = useMemo(() => items.reduce((s,i)=> s + (Number(i.amount)||0), 0), [items]);
 
   useEffect(() => {
@@ -86,6 +88,50 @@ export default function Income() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function onStartEdit(i: IncomeEntry, idx: number) {
+    const id = i.id ?? idx;
+    setEditingId(id);
+    setEditForm({ ...i });
+  }
+
+  async function onCancelEdit() {
+    setEditingId(null);
+    setEditForm(null);
+  }
+
+  async function onSaveEdit(idx: number) {
+    if (!editForm) return;
+    const id = editForm.id;
+    if (!configured) {
+      setItems(prev => prev.map((it, i) => ( (it.id ?? i) === (editingId as any) ? { ...it, ...editForm } : it)));
+      setEditingId(null); setEditForm(null);
+      return;
+    }
+    const user = auth!.currentUser; if (!user || !id) { setEditingId(null); setEditForm(null); return; }
+    const db = getDb();
+    await updateDoc(doc(db, "incomes", id), {
+      source: editForm.source,
+      amount: Number(editForm.amount),
+      date: editForm.date,
+      notes: editForm.notes || "",
+      updatedAt: serverTimestamp(),
+    });
+    setItems(prev => prev.map(it => it.id === id ? { ...it, ...editForm } : it));
+    setEditingId(null); setEditForm(null);
+  }
+
+  async function onDelete(i: IncomeEntry, idx: number) {
+    if (!confirm("Delete this income entry?")) return;
+    if (!configured) {
+      setItems(prev => prev.filter((it, i2) => (it.id ?? i2) !== (i.id ?? idx)));
+      return;
+    }
+    const user = auth!.currentUser; if (!user || !i.id) return;
+    const db = getDb();
+    await deleteDoc(doc(db, "incomes", i.id));
+    setItems(prev => prev.filter(it => it.id !== i.id));
   }
 
   return (
@@ -146,18 +192,52 @@ export default function Income() {
                   <th className="p-3">Amount</th>
                   <th className="p-3">Notes</th>
                   <th className="p-3">Invoice</th>
+                  <th className="p-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((i, idx) => (
-                  <tr key={i.id || idx} className="border-t">
-                    <td className="p-3 whitespace-nowrap">{i.date}</td>
-                    <td className="p-3">{i.source}</td>
-                    <td className="p-3">₹{Number(i.amount).toLocaleString()}</td>
-                    <td className="p-3">{i.notes}</td>
-                    <td className="p-3">{i.invoiceUrl ? <a className="text-primary underline" href={i.invoiceUrl} target="_blank" rel="noreferrer">View</a> : "—"}</td>
-                  </tr>
-                ))}
+                {items.map((i, idx) => {
+                  const rowId = i.id ?? idx;
+                  const isEditing = editingId === rowId;
+                  return (
+                    <tr key={rowId} className="border-t">
+                      <td className="p-3 whitespace-nowrap">
+                        {isEditing ? (
+                          <input className="h-9 w-full rounded border bg-background px-2 text-sm" type="date" value={editForm?.date||""} onChange={e=>setEditForm(f=>({...(f as any), date: e.target.value}))} />
+                        ) : i.date}
+                      </td>
+                      <td className="p-3">
+                        {isEditing ? (
+                          <input className="h-9 w-full rounded border bg-background px-2 text-sm" value={editForm?.source||""} onChange={e=>setEditForm(f=>({...(f as any), source: e.target.value}))} />
+                        ) : i.source}
+                      </td>
+                      <td className="p-3">
+                        {isEditing ? (
+                          <input className="h-9 w-full rounded border bg-background px-2 text-sm" type="number" value={Number(editForm?.amount)||0} onChange={e=>setEditForm(f=>({...(f as any), amount: Number(e.target.value)}))} />
+                        ) : `₹${Number(i.amount).toLocaleString()}`}
+                      </td>
+                      <td className="p-3">
+                        {isEditing ? (
+                          <input className="h-9 w-full rounded border bg-background px-2 text-sm" value={editForm?.notes||""} onChange={e=>setEditForm(f=>({...(f as any), notes: e.target.value}))} />
+                        ) : i.notes}
+                      </td>
+                      <td className="p-3">{i.invoiceUrl ? <a className="text-primary underline" href={i.invoiceUrl} target="_blank" rel="noreferrer">View</a> : "—"}</td>
+                      <td className="p-3 whitespace-nowrap">
+                        {isEditing ? (
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={()=>onSaveEdit(idx)}>Save</Button>
+                            <Button size="sm" variant="secondary" onClick={onCancelEdit}>Cancel</Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="secondary" onClick={()=>onStartEdit(i, idx)}>Edit</Button>
+                            <Button size="sm" variant="destructive" onClick={()=>onDelete(i, idx)}>Delete</Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
