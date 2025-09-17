@@ -31,6 +31,7 @@ const App = () => (
           <Route path="/goals-reminders" element={<GoalsReminders />} />
           <Route path="/itr" element={<ITR />} />
           <Route path="/gst" element={<GST />} />
+          <Route path="/login" element={<Login />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
