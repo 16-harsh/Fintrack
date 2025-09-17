@@ -150,14 +150,21 @@ export default function Expenses() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <div className="grid gap-1">
                 <label className="text-sm font-medium">Category</label>
-                <select className="h-10 rounded-md border bg-background px-3 text-sm" value={form.category} onChange={(e)=>setForm({...form, category: e.target.value})}>
-                  <option>Housing</option>
-                  <option>Food</option>
-                  <option>Transport</option>
-                  <option>Shopping</option>
-                  <option>Health</option>
-                  <option>Other</option>
-                </select>
+                <input
+                  className="h-10 rounded-md border bg-background px-3 text-sm"
+                  list="expense-categories"
+                  placeholder="e.g. Housing, Food, Transport"
+                  value={form.category}
+                  onChange={(e)=>setForm({...form, category: e.target.value})}
+                />
+                <datalist id="expense-categories">
+                  <option value="Housing" />
+                  <option value="Food" />
+                  <option value="Transport" />
+                  <option value="Shopping" />
+                  <option value="Health" />
+                  <option value="Other" />
+                </datalist>
               </div>
               <div className="grid gap-1">
                 <label className="text-sm font-medium">Amount</label>
@@ -210,14 +217,7 @@ export default function Expenses() {
                       </td>
                       <td className="p-3">
                         {isEditing ? (
-                          <select className="h-9 w-full rounded border bg-background px-2 text-sm" value={editForm?.category||""} onChange={e=>setEditForm(f=>({...(f as any), category: e.target.value}))}>
-                            <option>Housing</option>
-                            <option>Food</option>
-                            <option>Transport</option>
-                            <option>Shopping</option>
-                            <option>Health</option>
-                            <option>Other</option>
-                          </select>
+                          <input className="h-9 w-full rounded border bg-background px-2 text-sm" list="expense-categories" value={editForm?.category||""} onChange={e=>setEditForm(f=>({...(f as any), category: e.target.value}))} />
                         ) : i.category}
                       </td>
                       <td className="p-3">
