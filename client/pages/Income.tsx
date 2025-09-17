@@ -150,12 +150,19 @@ export default function Income() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <div className="grid gap-1">
                 <label className="text-sm font-medium">Source</label>
-                <select className="h-10 rounded-md border bg-background px-3 text-sm" value={form.source} onChange={(e)=>setForm({...form, source: e.target.value})}>
-                  <option>Job</option>
-                  <option>Freelancing</option>
-                  <option>Trading</option>
-                  <option>Other</option>
-                </select>
+                <input
+                  className="h-10 rounded-md border bg-background px-3 text-sm"
+                  list="income-sources"
+                  placeholder="e.g. Job, Freelancing, Trading"
+                  value={form.source}
+                  onChange={(e)=>setForm({...form, source: e.target.value})}
+                />
+                <datalist id="income-sources">
+                  <option value="Job" />
+                  <option value="Freelancing" />
+                  <option value="Trading" />
+                  <option value="Other" />
+                </datalist>
               </div>
               <div className="grid gap-1">
                 <label className="text-sm font-medium">Amount</label>
