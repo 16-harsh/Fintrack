@@ -1,7 +1,23 @@
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { isFirebaseConfigured, getDb, getBucket, getFirebaseAuth } from "@/lib/firebase";
-import { addDoc, collection, getDocs, orderBy, query, serverTimestamp, updateDoc, where, doc, deleteDoc } from "firebase/firestore";
+import {
+  isFirebaseConfigured,
+  getDb,
+  getBucket,
+  getFirebaseAuth,
+} from "@/lib/firebase";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  orderBy,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+  doc,
+  deleteDoc,
+} from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useEffect, useMemo, useState } from "react";
 
@@ -17,8 +33,18 @@ interface IncomeEntry {
 }
 
 const demo: IncomeEntry[] = [
-  { source: "Job", amount: 2500, date: new Date().toISOString().slice(0,10), notes: "Salary" },
-  { source: "Freelancing", amount: 800, date: new Date(Date.now()-86400000*7).toISOString().slice(0,10), notes: "Website revamp" },
+  {
+    source: "Job",
+    amount: 2500,
+    date: new Date().toISOString().slice(0, 10),
+    notes: "Salary",
+  },
+  {
+    source: "Freelancing",
+    amount: 800,
+    date: new Date(Date.now() - 86400000 * 7).toISOString().slice(0, 10),
+    notes: "Website revamp",
+  },
 ];
 
 export default function Income() {
@@ -27,11 +53,19 @@ export default function Income() {
   const [items, setItems] = useState<IncomeEntry[]>(configured ? [] : demo);
   const [loading, setLoading] = useState(false);
 
-  const [form, setForm] = useState<IncomeEntry>({ source: "Job", amount: 0, date: new Date().toISOString().slice(0,10), notes: "" });
+  const [form, setForm] = useState<IncomeEntry>({
+    source: "Job",
+    amount: 0,
+    date: new Date().toISOString().slice(0, 10),
+    notes: "",
+  });
   const [file, setFile] = useState<File | null>(null);
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [editForm, setEditForm] = useState<IncomeEntry | null>(null);
-  const total = useMemo(() => items.reduce((s,i)=> s + (Number(i.amount)||0), 0), [items]);
+  const total = useMemo(
+    () => items.reduce((s, i) => s + (Number(i.amount) || 0), 0),
+    [items],
+  );
 
   useEffect(() => {
     if (!configured) return;
@@ -39,7 +73,11 @@ export default function Income() {
     if (!user) return; // handled by demo mode
     (async () => {
       const db = getDb();
-      const q = query(collection(db, "incomes"), where("uid","==", user.uid), orderBy("createdAt","desc"));
+      const q = query(
+        collection(db, "incomes"),
+        where("uid", "==", user.uid),
+        orderBy("createdAt", "desc"),
+      );
       const snap = await getDocs(q);
       const list: IncomeEntry[] = [];
       snap.forEach((d) => list.push({ id: d.id, ...(d.data() as any) }));
@@ -51,7 +89,12 @@ export default function Income() {
     if (!form.amount || !form.date) return;
     if (!configured) {
       setItems((prev) => [{ ...form }, ...prev]);
-      setForm({ source: form.source, amount: 0, date: new Date().toISOString().slice(0,10), notes: "" });
+      setForm({
+        source: form.source,
+        amount: 0,
+        date: new Date().toISOString().slice(0, 10),
+        notes: "",
+      });
       setFile(null);
       return;
     }
@@ -77,13 +120,29 @@ export default function Income() {
         const storageRef = ref(storage, path);
         await uploadBytes(storageRef, file);
         invoiceUrl = await getDownloadURL(storageRef);
-        await updateDoc(doc(db, "incomes", docRef.id), { invoiceUrl, updatedAt: serverTimestamp() });
+        await updateDoc(doc(db, "incomes", docRef.id), {
+          invoiceUrl,
+          updatedAt: serverTimestamp(),
+        });
       }
       setItems((prev) => [
-        { id: docRef.id, uid: user.uid, source: form.source, amount: Number(form.amount), date: form.date, notes: form.notes, invoiceUrl },
+        {
+          id: docRef.id,
+          uid: user.uid,
+          source: form.source,
+          amount: Number(form.amount),
+          date: form.date,
+          notes: form.notes,
+          invoiceUrl,
+        },
         ...prev,
       ]);
-      setForm({ source: form.source, amount: 0, date: new Date().toISOString().slice(0,10), notes: "" });
+      setForm({
+        source: form.source,
+        amount: 0,
+        date: new Date().toISOString().slice(0, 10),
+        notes: "",
+      });
       setFile(null);
     } finally {
       setLoading(false);
@@ -105,11 +164,21 @@ export default function Income() {
     if (!editForm) return;
     const id = editForm.id;
     if (!configured) {
-      setItems(prev => prev.map((it, i) => ( (it.id ?? i) === (editingId as any) ? { ...it, ...editForm } : it)));
-      setEditingId(null); setEditForm(null);
+      setItems((prev) =>
+        prev.map((it, i) =>
+          (it.id ?? i) === (editingId as any) ? { ...it, ...editForm } : it,
+        ),
+      );
+      setEditingId(null);
+      setEditForm(null);
       return;
     }
-    const user = auth!.currentUser; if (!user || !id) { setEditingId(null); setEditForm(null); return; }
+    const user = auth!.currentUser;
+    if (!user || !id) {
+      setEditingId(null);
+      setEditForm(null);
+      return;
+    }
     const db = getDb();
     await updateDoc(doc(db, "incomes", id), {
       source: editForm.source,
@@ -118,20 +187,26 @@ export default function Income() {
       notes: editForm.notes || "",
       updatedAt: serverTimestamp(),
     });
-    setItems(prev => prev.map(it => it.id === id ? { ...it, ...editForm } : it));
-    setEditingId(null); setEditForm(null);
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, ...editForm } : it)),
+    );
+    setEditingId(null);
+    setEditForm(null);
   }
 
   async function onDelete(i: IncomeEntry, idx: number) {
     if (!confirm("Delete this income entry?")) return;
     if (!configured) {
-      setItems(prev => prev.filter((it, i2) => (it.id ?? i2) !== (i.id ?? idx)));
+      setItems((prev) =>
+        prev.filter((it, i2) => (it.id ?? i2) !== (i.id ?? idx)),
+      );
       return;
     }
-    const user = auth!.currentUser; if (!user || !i.id) return;
+    const user = auth!.currentUser;
+    if (!user || !i.id) return;
     const db = getDb();
     await deleteDoc(doc(db, "incomes", i.id));
-    setItems(prev => prev.filter(it => it.id !== i.id));
+    setItems((prev) => prev.filter((it) => it.id !== i.id));
   }
 
   return (
@@ -140,9 +215,13 @@ export default function Income() {
         <div className="flex flex-col gap-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Income</h1>
-            <p className="text-foreground/70">Upload income sources and invoices.</p>
+            <p className="text-foreground/70">
+              Upload income sources and invoices.
+            </p>
             {!configured && (
-              <p className="mt-2 text-sm text-foreground/70">Demo mode active. Connect Firebase to persist data.</p>
+              <p className="mt-2 text-sm text-foreground/70">
+                Demo mode active. Connect Firebase to persist data.
+              </p>
             )}
           </div>
 
@@ -155,7 +234,7 @@ export default function Income() {
                   list="income-sources"
                   placeholder="e.g. Job, Freelancing, Trading"
                   value={form.source}
-                  onChange={(e)=>setForm({...form, source: e.target.value})}
+                  onChange={(e) => setForm({ ...form, source: e.target.value })}
                 />
                 <datalist id="income-sources">
                   <option value="Job" />
@@ -166,29 +245,55 @@ export default function Income() {
               </div>
               <div className="grid gap-1">
                 <label className="text-sm font-medium">Amount</label>
-                <input className="h-10 rounded-md border bg-background px-3 text-sm" type="number" min={0} value={form.amount} onChange={(e)=>setForm({...form, amount: Number(e.target.value)})} />
+                <input
+                  className="h-10 rounded-md border bg-background px-3 text-sm"
+                  type="number"
+                  min={0}
+                  value={form.amount}
+                  onChange={(e) =>
+                    setForm({ ...form, amount: Number(e.target.value) })
+                  }
+                />
               </div>
               <div className="grid gap-1">
                 <label className="text-sm font-medium">Date</label>
-                <input className="h-10 rounded-md border bg-background px-3 text-sm" type="date" value={form.date} onChange={(e)=>setForm({...form, date: e.target.value})} />
+                <input
+                  className="h-10 rounded-md border bg-background px-3 text-sm"
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                />
               </div>
               <div className="grid gap-1 lg:col-span-2">
                 <label className="text-sm font-medium">Notes</label>
-                <input className="h-10 rounded-md border bg-background px-3 text-sm" placeholder="Optional" value={form.notes||""} onChange={(e)=>setForm({...form, notes: e.target.value})} />
+                <input
+                  className="h-10 rounded-md border bg-background px-3 text-sm"
+                  placeholder="Optional"
+                  value={form.notes || ""}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
               </div>
               <div className="grid gap-1 lg:col-span-2">
                 <label className="text-sm font-medium">Invoice</label>
-                <input className="h-10 rounded-md border bg-background px-3 text-sm file:mr-3 file:rounded file:border-0 file:bg-secondary file:px-3 file:py-2" type="file" onChange={(e)=>setFile(e.target.files?.[0]||null)} />
+                <input
+                  className="h-10 rounded-md border bg-background px-3 text-sm file:mr-3 file:rounded file:border-0 file:bg-secondary file:px-3 file:py-2"
+                  type="file"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                />
               </div>
               <div className="flex items-end">
-                <Button onClick={onAdd} disabled={loading}>{loading? "Saving...":"Add Income"}</Button>
+                <Button onClick={onAdd} disabled={loading}>
+                  {loading ? "Saving..." : "Add Income"}
+                </Button>
               </div>
             </div>
           </div>
 
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Entries</h2>
-            <p className="text-sm text-foreground/70">Total: ₹{total.toLocaleString()}</p>
+            <p className="text-sm text-foreground/70">
+              Total: ₹{total.toLocaleString()}
+            </p>
           </div>
           <div className="overflow-x-auto rounded-xl border">
             <table className="min-w-full text-sm">
@@ -210,35 +315,114 @@ export default function Income() {
                     <tr key={rowId} className="border-t">
                       <td className="p-3 whitespace-nowrap">
                         {isEditing ? (
-                          <input className="h-9 w-full rounded border bg-background px-2 text-sm" type="date" value={editForm?.date||""} onChange={e=>setEditForm(f=>({...(f as any), date: e.target.value}))} />
-                        ) : i.date}
+                          <input
+                            className="h-9 w-full rounded border bg-background px-2 text-sm"
+                            type="date"
+                            value={editForm?.date || ""}
+                            onChange={(e) =>
+                              setEditForm((f) => ({
+                                ...(f as any),
+                                date: e.target.value,
+                              }))
+                            }
+                          />
+                        ) : (
+                          i.date
+                        )}
                       </td>
                       <td className="p-3">
                         {isEditing ? (
-                          <input className="h-9 w-full rounded border bg-background px-2 text-sm" value={editForm?.source||""} onChange={e=>setEditForm(f=>({...(f as any), source: e.target.value}))} />
-                        ) : i.source}
+                          <input
+                            className="h-9 w-full rounded border bg-background px-2 text-sm"
+                            value={editForm?.source || ""}
+                            onChange={(e) =>
+                              setEditForm((f) => ({
+                                ...(f as any),
+                                source: e.target.value,
+                              }))
+                            }
+                          />
+                        ) : (
+                          i.source
+                        )}
                       </td>
                       <td className="p-3">
                         {isEditing ? (
-                          <input className="h-9 w-full rounded border bg-background px-2 text-sm" type="number" value={Number(editForm?.amount)||0} onChange={e=>setEditForm(f=>({...(f as any), amount: Number(e.target.value)}))} />
-                        ) : `₹${Number(i.amount).toLocaleString()}`}
+                          <input
+                            className="h-9 w-full rounded border bg-background px-2 text-sm"
+                            type="number"
+                            value={Number(editForm?.amount) || 0}
+                            onChange={(e) =>
+                              setEditForm((f) => ({
+                                ...(f as any),
+                                amount: Number(e.target.value),
+                              }))
+                            }
+                          />
+                        ) : (
+                          `₹${Number(i.amount).toLocaleString()}`
+                        )}
                       </td>
                       <td className="p-3">
                         {isEditing ? (
-                          <input className="h-9 w-full rounded border bg-background px-2 text-sm" value={editForm?.notes||""} onChange={e=>setEditForm(f=>({...(f as any), notes: e.target.value}))} />
-                        ) : i.notes}
+                          <input
+                            className="h-9 w-full rounded border bg-background px-2 text-sm"
+                            value={editForm?.notes || ""}
+                            onChange={(e) =>
+                              setEditForm((f) => ({
+                                ...(f as any),
+                                notes: e.target.value,
+                              }))
+                            }
+                          />
+                        ) : (
+                          i.notes
+                        )}
                       </td>
-                      <td className="p-3">{i.invoiceUrl ? <a className="text-primary underline" href={i.invoiceUrl} target="_blank" rel="noreferrer">View</a> : "—"}</td>
+                      <td className="p-3">
+                        {i.invoiceUrl ? (
+                          <a
+                            className="text-primary underline"
+                            href={i.invoiceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td className="p-3 whitespace-nowrap">
                         {isEditing ? (
                           <div className="flex gap-2">
-                            <Button size="sm" onClick={()=>onSaveEdit(idx)}>Save</Button>
-                            <Button size="sm" variant="secondary" onClick={onCancelEdit}>Cancel</Button>
+                            <Button size="sm" onClick={() => onSaveEdit(idx)}>
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={onCancelEdit}
+                            >
+                              Cancel
+                            </Button>
                           </div>
                         ) : (
                           <div className="flex gap-2">
-                            <Button size="sm" variant="secondary" onClick={()=>onStartEdit(i, idx)}>Edit</Button>
-                            <Button size="sm" variant="destructive" onClick={()=>onDelete(i, idx)}>Delete</Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => onStartEdit(i, idx)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => onDelete(i, idx)}
+                            >
+                              Delete
+                            </Button>
                           </div>
                         )}
                       </td>

@@ -14,7 +14,8 @@ export default function Login() {
   const configured = useMemo(() => isFirebaseConfigured, []);
   const nav = useNavigate();
   const location = useLocation() as any;
-  const redirectTo = (location?.state?.from?.pathname as string) || "/dashboard";
+  const redirectTo =
+    (location?.state?.from?.pathname as string) || "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +24,10 @@ export default function Login() {
 
   async function handleSignIn() {
     setError(null);
-    if (!configured) { nav(redirectTo, { replace: true }); return; }
+    if (!configured) {
+      nav(redirectTo, { replace: true });
+      return;
+    }
     setLoading(true);
     try {
       const auth = getFirebaseAuth();
@@ -38,7 +42,10 @@ export default function Login() {
 
   async function handleSignUp() {
     setError(null);
-    if (!configured) { nav(redirectTo, { replace: true }); return; }
+    if (!configured) {
+      nav(redirectTo, { replace: true });
+      return;
+    }
     setLoading(true);
     try {
       const auth = getFirebaseAuth();
@@ -53,7 +60,10 @@ export default function Login() {
 
   async function handleGoogle() {
     setError(null);
-    if (!configured) { nav(redirectTo, { replace: true }); return; }
+    if (!configured) {
+      nav(redirectTo, { replace: true });
+      return;
+    }
     setLoading(true);
     try {
       const auth = getFirebaseAuth();
@@ -76,17 +86,22 @@ export default function Login() {
       <div className="container py-10">
         <div className="mx-auto max-w-md rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
           <h1 className="text-2xl font-bold tracking-tight">Log in</h1>
-          <p className="mt-1 text-sm text-foreground/70">Access your FinTrack dashboard.</p>
+          <p className="mt-1 text-sm text-foreground/70">
+            Access your FinTrack dashboard.
+          </p>
 
           {!configured && (
             <div className="mt-3 rounded-md border border-dashed bg-muted/40 p-3 text-sm text-foreground/80">
-              Firebase is not configured. You can still explore the site in demo mode.
+              Firebase is not configured. You can still explore the site in demo
+              mode.
             </div>
           )}
 
           <div className="mt-6 grid gap-3">
             <div className="grid gap-1">
-              <label htmlFor="email" className="text-sm font-medium">Email</label>
+              <label htmlFor="email" className="text-sm font-medium">
+                Email
+              </label>
               <input
                 id="email"
                 type="email"
@@ -97,7 +112,9 @@ export default function Login() {
               />
             </div>
             <div className="grid gap-1">
-              <label htmlFor="password" className="text-sm font-medium">Password</label>
+              <label htmlFor="password" className="text-sm font-medium">
+                Password
+              </label>
               <input
                 id="password"
                 type="password"
@@ -109,19 +126,37 @@ export default function Login() {
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Button onClick={handleSignIn} disabled={loading}>{loading ? "Signing in..." : "Sign In"}</Button>
-              <Button variant="secondary" onClick={handleSignUp} disabled={loading}>Sign Up</Button>
+              <Button onClick={handleSignIn} disabled={loading}>
+                {loading ? "Signing in..." : "Sign In"}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleSignUp}
+                disabled={loading}
+              >
+                Sign Up
+              </Button>
             </div>
             <div className="mt-2">
-              <Button variant="outline" onClick={handleGoogle} disabled={loading} className="w-full">Continue with Google</Button>
+              <Button
+                variant="outline"
+                onClick={handleGoogle}
+                disabled={loading}
+                className="w-full"
+              >
+                Continue with Google
+              </Button>
             </div>
             {!configured && (
               <div className="mt-2">
-                <Button onClick={enterDemo} className="w-full">Enter Demo</Button>
+                <Button onClick={enterDemo} className="w-full">
+                  Enter Demo
+                </Button>
               </div>
             )}
             <p className="text-xs text-foreground/60 mt-2">
-              By continuing you agree to our Terms and acknowledge our Privacy Policy.
+              By continuing you agree to our Terms and acknowledge our Privacy
+              Policy.
             </p>
           </div>
         </div>
