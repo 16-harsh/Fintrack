@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { isFirebaseConfigured, getDb, getFirebaseAuth } from "@/lib/firebase";
-import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc, where, deleteDoc } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 
 interface SavingEntry {
@@ -43,7 +43,11 @@ export default function GoalsReminders() {
   const auth = configured ? getFirebaseAuth() : null;
 
   const [savings, setSavings] = useState<SavingEntry[]>(configured ? [] : demoSavings);
+  const [editingGoalId, setEditingGoalId] = useState<string | number | null>(null);
+  const [editGoalForm, setEditGoalForm] = useState<SavingEntry | null>(null);
   const [reminders, setReminders] = useState<ReminderEntry[]>(configured ? [] : demoReminders);
+  const [editingReminderId, setEditingReminderId] = useState<string | number | null>(null);
+  const [editReminderForm, setEditReminderForm] = useState<ReminderEntry | null>(null);
 
   const [savingForm, setSavingForm] = useState<SavingEntry>({ goalName: '', category: 'General', targetAmount: 0, currentAmount: 0, notes: '' });
   const [reminderForm, setReminderForm] = useState<ReminderEntry>({ title: '', dueDate: new Date().toISOString().slice(0,10), amount: 0, recurring: 'none', status: 'upcoming' });
@@ -137,6 +141,70 @@ export default function GoalsReminders() {
   const upcomingCount = useMemo(() => reminders.filter(r => r.status === 'upcoming').length, [reminders]);
   const progress = (v: number, t: number) => !t ? 0 : Math.min(100, Math.round((v/t)*100));
 
+  async function startEditGoal(s: SavingEntry, idx: number) {
+    setEditingGoalId(s.id ?? idx);
+    setEditGoalForm({ ...s });
+  }
+  function cancelEditGoal() { setEditingGoalId(null); setEditGoalForm(null); }
+  async function saveEditGoal(idx: number) {
+    if (!editGoalForm) return;
+    if (!configured) {
+      setSavings(prev => prev.map((x, i) => ((x.id ?? i) === (editingGoalId as any) ? { ...x, ...editGoalForm } : x)));
+      setEditingGoalId(null); setEditGoalForm(null); return;
+    }
+    const user = auth!.currentUser; if (!user || !editGoalForm.id) { setEditingGoalId(null); setEditGoalForm(null); return; }
+    const db = getDb();
+    await updateDoc(doc(db, 'savings', editGoalForm.id), {
+      goalName: editGoalForm.goalName,
+      category: editGoalForm.category,
+      targetAmount: Number(editGoalForm.targetAmount||0),
+      currentAmount: Number(editGoalForm.currentAmount||0),
+      notes: editGoalForm.notes||'',
+      updatedAt: serverTimestamp(),
+    });
+    setSavings(prev => prev.map(x => x.id === editGoalForm.id ? { ...x, ...editGoalForm } : x));
+    setEditingGoalId(null); setEditGoalForm(null);
+  }
+  async function deleteGoal(s: SavingEntry, idx: number) {
+    if (!confirm('Delete this goal?')) return;
+    if (!configured) { setSavings(prev => prev.filter((x, i)=> (x.id ?? i)!==(s.id ?? idx))); return; }
+    const user = auth!.currentUser; if (!user || !s.id) return;
+    const db = getDb(); await deleteDoc(doc(db, 'savings', s.id));
+    setSavings(prev => prev.filter(x => x.id !== s.id));
+  }
+
+  async function startEditReminder(r: ReminderEntry, idx: number) {
+    setEditingReminderId(r.id ?? idx);
+    setEditReminderForm({ ...r });
+  }
+  function cancelEditReminder() { setEditingReminderId(null); setEditReminderForm(null); }
+  async function saveEditReminder(idx: number) {
+    if (!editReminderForm) return;
+    if (!configured) {
+      setReminders(prev => prev.map((x, i) => ((x.id ?? i) === (editingReminderId as any) ? { ...x, ...editReminderForm } : x)));
+      setEditingReminderId(null); setEditReminderForm(null); return;
+    }
+    const user = auth!.currentUser; if (!user || !editReminderForm.id) { setEditingReminderId(null); setEditReminderForm(null); return; }
+    const db = getDb();
+    await updateDoc(doc(db, 'reminders', editReminderForm.id), {
+      title: editReminderForm.title,
+      dueDate: editReminderForm.dueDate,
+      amount: Number(editReminderForm.amount||0),
+      recurring: editReminderForm.recurring,
+      status: editReminderForm.status,
+      updatedAt: serverTimestamp(),
+    });
+    setReminders(prev => prev.map(x => x.id === editReminderForm.id ? { ...x, ...editReminderForm } : x));
+    setEditingReminderId(null); setEditReminderForm(null);
+  }
+  async function deleteReminder(r: ReminderEntry, idx: number) {
+    if (!confirm('Delete this reminder?')) return;
+    if (!configured) { setReminders(prev => prev.filter((x, i)=> (x.id ?? i)!==(r.id ?? idx))); return; }
+    const user = auth!.currentUser; if (!user || !r.id) return;
+    const db = getDb(); await deleteDoc(doc(db, 'reminders', r.id));
+    setReminders(prev => prev.filter(x => x.id !== r.id));
+  }
+
   return (
     <Layout>
       <div className="container py-10">
@@ -180,20 +248,51 @@ export default function GoalsReminders() {
 
               <h3 className="mt-8 text-sm font-semibold text-foreground/70">Your Goals</h3>
               <div className="mt-3 grid gap-3">
-                {savings.map((s, idx) => (
-                  <div key={s.id || idx} className="rounded-lg border p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-medium">{s.goalName}</p>
-                        <p className="text-xs text-foreground/70">{s.category}</p>
+                {savings.map((s, idx) => {
+                  const rowId = s.id ?? idx;
+                  const isEditing = editingGoalId === rowId;
+                  return (
+                    <div key={rowId} className="rounded-lg border p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1">
+                          {isEditing ? (
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <input className="h-9 rounded-md border bg-background px-2 text-sm" value={editGoalForm?.goalName||''} onChange={e=>setEditGoalForm(f=>({...(f as any), goalName: e.target.value}))} />
+                              <input className="h-9 rounded-md border bg-background px-2 text-sm" value={editGoalForm?.category||''} onChange={e=>setEditGoalForm(f=>({...(f as any), category: e.target.value}))} />
+                              <input className="h-9 rounded-md border bg-background px-2 text-sm" type="number" value={Number(editGoalForm?.targetAmount)||0} onChange={e=>setEditGoalForm(f=>({...(f as any), targetAmount: Number(e.target.value)}))} />
+                              <input className="h-9 rounded-md border bg-background px-2 text-sm" type="number" value={Number(editGoalForm?.currentAmount)||0} onChange={e=>setEditGoalForm(f=>({...(f as any), currentAmount: Number(e.target.value)}))} />
+                              <input className="h-9 rounded-md border bg-background px-2 text-sm sm:col-span-2" placeholder="Notes" value={editGoalForm?.notes||''} onChange={e=>setEditGoalForm(f=>({...(f as any), notes: e.target.value}))} />
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="font-medium">{s.goalName}</p>
+                              <p className="text-xs text-foreground/70">{s.category}</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm">₹{Number((isEditing ? editGoalForm?.currentAmount : s.currentAmount) || 0).toLocaleString()} / ₹{Number((isEditing ? editGoalForm?.targetAmount : s.targetAmount) || 0).toLocaleString()}</p>
+                        </div>
                       </div>
-                      <p className="text-sm">₹{Number(s.currentAmount||0).toLocaleString()} / ₹{Number(s.targetAmount||0).toLocaleString()}</p>
+                      <div className="mt-2 h-2 w-full overflow-hidden rounded bg-secondary">
+                        <div className="h-full bg-primary" style={{ width: `${progress(Number((isEditing ? editGoalForm?.currentAmount : s.currentAmount) || 0), Number((isEditing ? editGoalForm?.targetAmount : s.targetAmount) || 0))}%` }} />
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        {isEditing ? (
+                          <>
+                            <Button size="sm" onClick={()=>saveEditGoal(idx)}>Save</Button>
+                            <Button size="sm" variant="secondary" onClick={cancelEditGoal}>Cancel</Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button size="sm" variant="secondary" onClick={()=>startEditGoal(s, idx)}>Edit</Button>
+                            <Button size="sm" variant="destructive" onClick={()=>deleteGoal(s, idx)}>Delete</Button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-2 h-2 w-full overflow-hidden rounded bg-secondary">
-                      <div className="h-full bg-primary" style={{ width: `${progress(Number(s.currentAmount||0), Number(s.targetAmount||0))}%` }} />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -230,21 +329,56 @@ export default function GoalsReminders() {
                 <p className="text-xs text-foreground/70">{upcomingCount} upcoming</p>
               </div>
               <div className="mt-3 grid gap-3">
-                {reminders.map((r, idx) => (
-                  <div key={r.id || idx} className="rounded-lg border p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-medium">{r.title}</p>
-                        <p className="text-xs text-foreground/70">Due {r.dueDate} · {r.recurring !== 'none' ? r.recurring : 'one-time'} · {r.status}</p>
+                {reminders.map((r, idx) => {
+                  const rowId = r.id ?? idx;
+                  const isEditing = editingReminderId === rowId;
+                  return (
+                    <div key={rowId} className="rounded-lg border p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1">
+                          {isEditing ? (
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <input className="h-9 rounded-md border bg-background px-2 text-sm sm:col-span-2" value={editReminderForm?.title||''} onChange={e=>setEditReminderForm(f=>({...(f as any), title: e.target.value}))} />
+                              <input className="h-9 rounded-md border bg-background px-2 text-sm" type="date" value={editReminderForm?.dueDate||''} onChange={e=>setEditReminderForm(f=>({...(f as any), dueDate: e.target.value}))} />
+                              <input className="h-9 rounded-md border bg-background px-2 text-sm" type="number" value={Number(editReminderForm?.amount)||0} onChange={e=>setEditReminderForm(f=>({...(f as any), amount: Number(e.target.value)}))} />
+                              <select className="h-9 rounded-md border bg-background px-2 text-sm" value={editReminderForm?.recurring||'none'} onChange={e=>setEditReminderForm(f=>({...(f as any), recurring: e.target.value as any}))}>
+                                <option value="none">None</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                              </select>
+                              <select className="h-9 rounded-md border bg-background px-2 text-sm" value={editReminderForm?.status||'upcoming'} onChange={e=>setEditReminderForm(f=>({...(f as any), status: e.target.value as any}))}>
+                                <option value="upcoming">upcoming</option>
+                                <option value="paid">paid</option>
+                                <option value="snoozed">snoozed</option>
+                              </select>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="font-medium">{r.title}</p>
+                              <p className="text-xs text-foreground/70">Due {r.dueDate} · {r.recurring !== 'none' ? r.recurring : 'one-time'} · {r.status}</p>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm">₹{Number((isEditing ? editReminderForm?.amount : r.amount)||0).toLocaleString()}</p>
                       </div>
-                      <p className="text-sm">₹{Number(r.amount||0).toLocaleString()}</p>
+                      <div className="mt-3 flex items-center gap-2">
+                        {isEditing ? (
+                          <>
+                            <Button size="sm" onClick={()=>saveEditReminder(idx)}>Save</Button>
+                            <Button size="sm" variant="secondary" onClick={cancelEditReminder}>Cancel</Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button size="sm" variant="secondary" onClick={()=>startEditReminder(r, idx)}>Edit</Button>
+                            <Button size="sm" variant="destructive" onClick={()=>deleteReminder(r, idx)}>Delete</Button>
+                            <Button size="sm" variant="secondary" onClick={() => markPaid(r)}>Mark Paid</Button>
+                            <Button size="sm" onClick={() => snooze(r)}>Snooze 7d</Button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-3 flex items-center gap-2">
-                      <Button size="sm" variant="secondary" onClick={() => markPaid(r)}>Mark Paid</Button>
-                      <Button size="sm" onClick={() => snooze(r)}>Snooze 7d</Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </section>
