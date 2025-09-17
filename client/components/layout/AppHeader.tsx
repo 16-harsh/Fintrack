@@ -34,11 +34,6 @@ export function AppHeader() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
-          <Link to="/dashboard">
-            <Button size="sm" className="hidden sm:inline-flex">Open Site</Button>
-          </Link>
-        </div>
       </div>
     </header>
   );
