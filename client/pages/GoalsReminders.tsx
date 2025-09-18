@@ -39,53 +39,17 @@ interface ReminderEntry {
   updatedAt?: any;
 }
 
-const demoSavings: SavingEntry[] = [
-  {
-    goalName: "Emergency Fund",
-    category: "Safety",
-    targetAmount: 200000,
-    currentAmount: 65000,
-    notes: "6 months runway",
-  },
-  {
-    goalName: "New Laptop",
-    category: "Gear",
-    targetAmount: 120000,
-    currentAmount: 30000,
-  },
-];
-
-const demoReminders: ReminderEntry[] = [
-  {
-    title: "Credit Card Bill",
-    dueDate: new Date(Date.now() + 86400000 * 5).toISOString().slice(0, 10),
-    amount: 4500,
-    recurring: "monthly",
-    status: "upcoming",
-  },
-  {
-    title: "Internet Bill",
-    dueDate: new Date(Date.now() + 86400000 * 10).toISOString().slice(0, 10),
-    amount: 799,
-    recurring: "monthly",
-    status: "upcoming",
-  },
-];
 
 export default function GoalsReminders() {
   const configured = useMemo(() => isFirebaseConfigured, []);
   const auth = configured ? getFirebaseAuth() : null;
 
-  const [savings, setSavings] = useState<SavingEntry[]>(
-    configured ? [] : demoSavings,
-  );
+  const [savings, setSavings] = useState<SavingEntry[]>([]);
   const [editingGoalId, setEditingGoalId] = useState<string | number | null>(
     null,
   );
   const [editGoalForm, setEditGoalForm] = useState<SavingEntry | null>(null);
-  const [reminders, setReminders] = useState<ReminderEntry[]>(
-    configured ? [] : demoReminders,
-  );
+  const [reminders, setReminders] = useState<ReminderEntry[]>([]);
   const [editingReminderId, setEditingReminderId] = useState<
     string | number | null
   >(null);
