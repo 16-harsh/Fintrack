@@ -8,14 +8,6 @@ import * as XLSX from "xlsx";
 interface IncomeEntry { id?: string; uid?: string; source: string; amount: number; date: string; notes?: string; invoiceUrl?: string; }
 interface ExpenseEntry { id?: string; uid?: string; category: string; amount: number; date: string; notes?: string; receiptUrl?: string; }
 
-const demoIncome: IncomeEntry[] = [
-  { source: "Job", amount: 2500, date: new Date().toISOString().slice(0,10), notes: "Salary", invoiceUrl: "" },
-  { source: "Freelancing", amount: 900, date: new Date(Date.now()-86400000*20).toISOString().slice(0,10), notes: "Landing page", invoiceUrl: "" },
-];
-const demoExpenses: ExpenseEntry[] = [
-  { category: "Housing", amount: 900, date: new Date().toISOString().slice(0,10), notes: "Rent", receiptUrl: "" },
-  { category: "Food", amount: 220, date: new Date(Date.now()-86400000*10).toISOString().slice(0,10), notes: "Groceries", receiptUrl: "" },
-];
 
 export default function GST() {
   const configured = useMemo(() => isFirebaseConfigured, []);
@@ -23,8 +15,8 @@ export default function GST() {
 
   const [from, setFrom] = useState(() => new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0,10));
   const [to, setTo] = useState(() => new Date().toISOString().slice(0,10));
-  const [incomes, setIncomes] = useState<IncomeEntry[]>(configured ? [] : demoIncome);
-  const [expenses, setExpenses] = useState<ExpenseEntry[]>(configured ? [] : demoExpenses);
+  const [incomes, setIncomes] = useState<IncomeEntry[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -83,7 +75,6 @@ export default function GST() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">GST Report</h1>
               <p className="text-foreground/70">Generate GST-ready Excel with sales, purchases and links to documents.</p>
-              {!configured && <p className="text-sm text-foreground/70 mt-1">Demo mode active. Connect Firebase to use your data.</p>}
             </div>
             <div className="flex items-center gap-2">
               <input type="date" className="h-10 rounded-md border bg-background px-3 text-sm" value={from} onChange={(e)=>setFrom(e.target.value)} />

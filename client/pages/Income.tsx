@@ -73,17 +73,7 @@ export default function Income() {
 
   async function onAdd() {
     if (!form.amount || !form.date) return;
-    if (!configured) {
-      setItems((prev) => [{ ...form }, ...prev]);
-      setForm({
-        source: form.source,
-        amount: 0,
-        date: new Date().toISOString().slice(0, 10),
-        notes: "",
-      });
-      setFile(null);
-      return;
-    }
+    if (!configured) { alert("Connect Firebase to add income."); return; }
     const user = auth!.currentUser;
     if (!user) return;
     setLoading(true);
@@ -149,16 +139,7 @@ export default function Income() {
   async function onSaveEdit(idx: number) {
     if (!editForm) return;
     const id = editForm.id;
-    if (!configured) {
-      setItems((prev) =>
-        prev.map((it, i) =>
-          (it.id ?? i) === (editingId as any) ? { ...it, ...editForm } : it,
-        ),
-      );
-      setEditingId(null);
-      setEditForm(null);
-      return;
-    }
+    if (!configured) { alert("Connect Firebase to edit income."); return; }
     const user = auth!.currentUser;
     if (!user || !id) {
       setEditingId(null);
@@ -182,12 +163,7 @@ export default function Income() {
 
   async function onDelete(i: IncomeEntry, idx: number) {
     if (!confirm("Delete this income entry?")) return;
-    if (!configured) {
-      setItems((prev) =>
-        prev.filter((it, i2) => (it.id ?? i2) !== (i.id ?? idx)),
-      );
-      return;
-    }
+    if (!configured) { alert("Connect Firebase to delete income."); return; }
     const user = auth!.currentUser;
     if (!user || !i.id) return;
     const db = getDb();
@@ -204,11 +180,6 @@ export default function Income() {
             <p className="text-foreground/70">
               Upload income sources and invoices.
             </p>
-            {!configured && (
-              <p className="mt-2 text-sm text-foreground/70">
-                Demo mode active. Connect Firebase to persist data.
-              </p>
-            )}
           </div>
 
           <div className="rounded-xl border bg-card p-4 sm:p-6">

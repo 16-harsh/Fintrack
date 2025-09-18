@@ -99,17 +99,7 @@ export default function GoalsReminders() {
 
   async function addSaving() {
     if (!savingForm.goalName || !savingForm.targetAmount) return;
-    if (!configured) {
-      setSavings((prev) => [{ ...savingForm }, ...prev]);
-      setSavingForm({
-        goalName: "",
-        category: "General",
-        targetAmount: 0,
-        currentAmount: 0,
-        notes: "",
-      });
-      return;
-    }
+    if (!configured) { alert("Connect Firebase to add goals."); return; }
     const user = auth!.currentUser;
     if (!user) return;
     const db = getDb();
@@ -138,17 +128,7 @@ export default function GoalsReminders() {
 
   async function addReminder() {
     if (!reminderForm.title || !reminderForm.dueDate) return;
-    if (!configured) {
-      setReminders((prev) => [{ ...reminderForm }, ...prev]);
-      setReminderForm({
-        title: "",
-        dueDate: new Date().toISOString().slice(0, 10),
-        amount: 0,
-        recurring: "none",
-        status: "upcoming",
-      });
-      return;
-    }
+    if (!configured) { alert("Connect Firebase to add reminders."); return; }
     const user = auth!.currentUser;
     if (!user) return;
     const db = getDb();
@@ -176,12 +156,7 @@ export default function GoalsReminders() {
   }
 
   async function markPaid(r: ReminderEntry) {
-    if (!configured) {
-      setReminders((prev) =>
-        prev.map((x) => (x === r ? { ...x, status: "paid" } : x)),
-      );
-      return;
-    }
+    if (!configured) { alert("Connect Firebase to mark reminders as paid."); return; }
     const user = auth!.currentUser;
     if (!user || !r.id) return;
     const db = getDb();
@@ -198,14 +173,7 @@ export default function GoalsReminders() {
     const newDate = new Date(r.dueDate);
     newDate.setDate(newDate.getDate() + 7);
     const iso = newDate.toISOString().slice(0, 10);
-    if (!configured) {
-      setReminders((prev) =>
-        prev.map((x) =>
-          x === r ? { ...x, status: "snoozed", dueDate: iso } : x,
-        ),
-      );
-      return;
-    }
+    if (!configured) { alert("Connect Firebase to snooze reminders."); return; }
     const user = auth!.currentUser;
     if (!user || !r.id) return;
     const db = getDb();
@@ -238,18 +206,7 @@ export default function GoalsReminders() {
   }
   async function saveEditGoal(idx: number) {
     if (!editGoalForm) return;
-    if (!configured) {
-      setSavings((prev) =>
-        prev.map((x, i) =>
-          (x.id ?? i) === (editingGoalId as any)
-            ? { ...x, ...editGoalForm }
-            : x,
-        ),
-      );
-      setEditingGoalId(null);
-      setEditGoalForm(null);
-      return;
-    }
+    if (!configured) { alert("Connect Firebase to edit goals."); return; }
     const user = auth!.currentUser;
     if (!user || !editGoalForm.id) {
       setEditingGoalId(null);
@@ -275,12 +232,7 @@ export default function GoalsReminders() {
   }
   async function deleteGoal(s: SavingEntry, idx: number) {
     if (!confirm("Delete this goal?")) return;
-    if (!configured) {
-      setSavings((prev) =>
-        prev.filter((x, i) => (x.id ?? i) !== (s.id ?? idx)),
-      );
-      return;
-    }
+    if (!configured) { alert("Connect Firebase to delete goals."); return; }
     const user = auth!.currentUser;
     if (!user || !s.id) return;
     const db = getDb();
@@ -298,18 +250,7 @@ export default function GoalsReminders() {
   }
   async function saveEditReminder(idx: number) {
     if (!editReminderForm) return;
-    if (!configured) {
-      setReminders((prev) =>
-        prev.map((x, i) =>
-          (x.id ?? i) === (editingReminderId as any)
-            ? { ...x, ...editReminderForm }
-            : x,
-        ),
-      );
-      setEditingReminderId(null);
-      setEditReminderForm(null);
-      return;
-    }
+    if (!configured) { alert("Connect Firebase to edit reminders."); return; }
     const user = auth!.currentUser;
     if (!user || !editReminderForm.id) {
       setEditingReminderId(null);
@@ -335,12 +276,7 @@ export default function GoalsReminders() {
   }
   async function deleteReminder(r: ReminderEntry, idx: number) {
     if (!confirm("Delete this reminder?")) return;
-    if (!configured) {
-      setReminders((prev) =>
-        prev.filter((x, i) => (x.id ?? i) !== (r.id ?? idx)),
-      );
-      return;
-    }
+    if (!configured) { alert("Connect Firebase to delete reminders."); return; }
     const user = auth!.currentUser;
     if (!user || !r.id) return;
     const db = getDb();
@@ -359,11 +295,6 @@ export default function GoalsReminders() {
             <p className="text-foreground/70">
               Plan savings goals and never miss a bill.
             </p>
-            {!configured && (
-              <p className="mt-2 text-sm text-foreground/70">
-                Demo mode active. Connect Firebase to persist data.
-              </p>
-            )}
           </div>
 
           <section className="grid gap-6 lg:grid-cols-2">
