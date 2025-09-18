@@ -1,4 +1,3 @@
-import { DemoResponse } from "@shared/api";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { Layout } from "@/components/layout/Layout";
