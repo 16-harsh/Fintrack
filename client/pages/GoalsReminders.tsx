@@ -66,7 +66,7 @@ export default function GoalsReminders() {
   const [reminderForm, setReminderForm] = useState<ReminderEntry>({
     title: "",
     dueDate: new Date().toISOString().slice(0, 10),
-    amount: 0,
+    amount: Number.NaN as any,
     recurring: "none",
     status: "upcoming",
   });
@@ -543,7 +543,7 @@ export default function GoalsReminders() {
                     className="h-10 rounded-md border bg-background px-3 text-sm"
                     type="number"
                     min={0}
-                    value={Number(reminderForm.amount) || 0}
+                    value={Number.isFinite(Number(reminderForm.amount)) ? Number(reminderForm.amount) : ""}
                     onChange={(e) =>
                       setReminderForm({
                         ...reminderForm,
