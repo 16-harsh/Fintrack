@@ -56,7 +56,7 @@ export default function Income() {
   useEffect(() => {
     if (!configured) return;
     const user = auth!.currentUser;
-    if (!user) return; // handled by demo mode
+    if (!user) return;
     (async () => {
       const db = getDb();
       const q = query(
