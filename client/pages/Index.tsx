@@ -18,10 +18,7 @@ export default function Index() {
   async function onLogin(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!configured) {
-      navigate("/dashboard");
-      return;
-    }
+    if (!configured) { setError("Authentication not configured."); return; }
     try {
       setLoading(true);
       const auth = getFirebaseAuth();
@@ -54,7 +51,7 @@ export default function Index() {
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button onClick={() => navigate("/dashboard")}>
-                Explore Dashboard (Demo)
+                Explore Dashboard
               </Button>
               <a href="#login" className="text-sm font-medium text-foreground/70 hover:text-foreground">
                 Secure Login below
@@ -84,7 +81,7 @@ export default function Index() {
               <h2 className="text-xl font-semibold">Login</h2>
               {!configured && (
                 <p className="mt-2 text-sm text-foreground/70">
-                  Firebase is not connected yet. Use Demo to preview the site, or set
+                  Firebase is not connected yet. Set
                   VITE_FIREBASE_* variables in project settings to enable authentication.
                 </p>
               )}
@@ -98,7 +95,7 @@ export default function Index() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
-                    placeholder={configured ? "you@example.com" : "demo@example.com"}
+                    placeholder="you@example.com"
                   />
                 </div>
                 <div className="grid gap-1">
@@ -110,15 +107,14 @@ export default function Index() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
-                    placeholder={configured ? "••••••••" : "demo"}
+                    placeholder="••••���•••"
                   />
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <div className="mt-2 flex items-center gap-2">
-                  <Button type="submit" disabled={loading} className="flex-1">
-                    {configured ? (loading ? "Signing in..." : "Sign In") : "Enter Demo"}
+                  <Button type="submit" disabled={loading || !configured} className="flex-1">
+                    {loading ? "Signing in..." : "Sign In"}
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => navigate("/dashboard")}>Skip</Button>
                 </div>
                 <p className="text-xs text-foreground/60 mt-2">
                   By continuing you agree to our Terms and acknowledge our Privacy Policy.
