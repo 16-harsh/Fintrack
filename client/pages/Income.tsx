@@ -32,25 +32,11 @@ interface IncomeEntry {
   createdAt?: any;
 }
 
-const demo: IncomeEntry[] = [
-  {
-    source: "Job",
-    amount: 2500,
-    date: new Date().toISOString().slice(0, 10),
-    notes: "Salary",
-  },
-  {
-    source: "Freelancing",
-    amount: 800,
-    date: new Date(Date.now() - 86400000 * 7).toISOString().slice(0, 10),
-    notes: "Website revamp",
-  },
-];
 
 export default function Income() {
   const configured = useMemo(() => isFirebaseConfigured, []);
   const auth = configured ? getFirebaseAuth() : null;
-  const [items, setItems] = useState<IncomeEntry[]>(configured ? [] : demo);
+  const [items, setItems] = useState<IncomeEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState<IncomeEntry>({
