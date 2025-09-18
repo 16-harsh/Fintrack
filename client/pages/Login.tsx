@@ -24,10 +24,7 @@ export default function Login() {
 
   async function handleSignIn() {
     setError(null);
-    if (!configured) {
-      nav(redirectTo, { replace: true });
-      return;
-    }
+    if (!configured) { setError("Authentication not configured."); return; }
     setLoading(true);
     try {
       const auth = getFirebaseAuth();
@@ -42,10 +39,7 @@ export default function Login() {
 
   async function handleSignUp() {
     setError(null);
-    if (!configured) {
-      nav(redirectTo, { replace: true });
-      return;
-    }
+    if (!configured) { setError("Authentication not configured."); return; }
     setLoading(true);
     try {
       const auth = getFirebaseAuth();
@@ -60,10 +54,7 @@ export default function Login() {
 
   async function handleGoogle() {
     setError(null);
-    if (!configured) {
-      nav(redirectTo, { replace: true });
-      return;
-    }
+    if (!configured) { setError("Authentication not configured."); return; }
     setLoading(true);
     try {
       const auth = getFirebaseAuth();
@@ -77,9 +68,6 @@ export default function Login() {
     }
   }
 
-  function enterDemo() {
-    nav(redirectTo, { replace: true });
-  }
 
   return (
     <Layout>
@@ -92,8 +80,7 @@ export default function Login() {
 
           {!configured && (
             <div className="mt-3 rounded-md border border-dashed bg-muted/40 p-3 text-sm text-foreground/80">
-              Firebase is not configured. You can still explore the site in demo
-              mode.
+              Firebase is not configured. Set VITE_FIREBASE_* to enable sign-in.
             </div>
           )}
 
@@ -147,13 +134,6 @@ export default function Login() {
                 Continue with Google
               </Button>
             </div>
-            {!configured && (
-              <div className="mt-2">
-                <Button onClick={enterDemo} className="w-full">
-                  Enter Demo
-                </Button>
-              </div>
-            )}
             <p className="text-xs text-foreground/60 mt-2">
               By continuing you agree to our Terms and acknowledge our Privacy
               Policy.
