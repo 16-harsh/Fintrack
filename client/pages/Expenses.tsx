@@ -32,25 +32,11 @@ interface ExpenseEntry {
   createdAt?: any;
 }
 
-const demo: ExpenseEntry[] = [
-  {
-    category: "Housing",
-    amount: 900,
-    date: new Date().toISOString().slice(0, 10),
-    notes: "Rent",
-  },
-  {
-    category: "Food",
-    amount: 250,
-    date: new Date(Date.now() - 86400000 * 2).toISOString().slice(0, 10),
-    notes: "Groceries",
-  },
-];
 
 export default function Expenses() {
   const configured = useMemo(() => isFirebaseConfigured, []);
   const auth = configured ? getFirebaseAuth() : null;
-  const [items, setItems] = useState<ExpenseEntry[]>(configured ? [] : demo);
+  const [items, setItems] = useState<ExpenseEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState<ExpenseEntry>({
