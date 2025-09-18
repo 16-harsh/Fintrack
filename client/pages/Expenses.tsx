@@ -41,7 +41,7 @@ export default function Expenses() {
 
   const [form, setForm] = useState<ExpenseEntry>({
     category: "Housing",
-    amount: 0,
+    amount: Number.NaN,
     date: new Date().toISOString().slice(0, 10),
     notes: "",
   });
@@ -210,7 +210,7 @@ export default function Expenses() {
                   className="h-10 rounded-md border bg-background px-3 text-sm"
                   type="number"
                   min={0}
-                  value={form.amount}
+                  value={Number.isFinite(form.amount) ? form.amount : ""}
                   onChange={(e) =>
                     setForm({ ...form, amount: Number(e.target.value) })
                   }
